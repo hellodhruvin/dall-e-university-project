@@ -1,9 +1,9 @@
 import os
-from typing import NamedTuple, Union, List, Annotated
+from typing import NamedTuple, Union, List
 from collections import deque
 
 import openai
-from fastapi import FastAPI, HTTPException, File, UploadFile
+from fastapi import FastAPI, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from openai import Client
 
