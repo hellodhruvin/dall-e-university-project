@@ -281,10 +281,11 @@ function App() {
               )}
               {!prompt && !selectedSuggestionCtx && (
                 <div className="flex space-x-2 w-full justify-around">
-                  {Object.keys(SUGGESTIONS).map((k) => {
+                  {Object.keys(SUGGESTIONS).map((k, idx) => {
                     // Isn't typescript just amazing?
                     return (
                       <Button
+                        key={idx}
                         onClick={() =>
                           setSelectedSuggestionCtx(
                             k as keyof typeof SUGGESTIONS,

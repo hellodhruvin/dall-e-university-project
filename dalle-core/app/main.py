@@ -1,9 +1,9 @@
 import os
-from typing import NamedTuple, Union, List
+from typing import NamedTuple, Union, List, Annotated
 from collections import deque
 
 import openai
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from openai import Client
 
@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 
 # Just set this to True if you want to generate actual images, or False to just
 # use placeholders so that credits don't get consumed when working on front end
-TESTING_NO_IMAGEGEN = True
+TESTING_NO_IMAGEGEN = False
 
 load_dotenv()
 
@@ -44,6 +44,22 @@ async def api_status_check():
     return {"Status": "Online"}
 
 
+@app.get("/variations")
+async def api_generate_variations(image: UploadFile):
+    try:
+        images = await generate_variations(image, 4)
+
+        q = deque()
+
+        for img in images:
+            q.append({"url": img.url})
+
+        return {"images": q}
+    except openai.OpenAIError as e:
+        print(e)
+        raise HTTPException(500, "INTERNAL_API_ERROR")
+
+
 @app.get("/generate-image-hq")
 async def api_generate_image_high_quality(prompt: Union[str, None] = None):
     """
@@ -65,7 +81,7 @@ async def api_generate_image_high_quality(prompt: Union[str, None] = None):
 
         q = deque()
 
-        # Inline fot didn't quite cutout and using queue is fancy so why not.
+        # Inline for didn't quite cutout and using queue is fancy so why not.
         for img in images:
             q.append({"url": img.url})
 
@@ -92,7 +108,11 @@ async def api_generate_image(prompt: Union[str, None] = None):
 
     try:
         images = []
-        images = await generate_images_dummy(prompt, 4) if TESTING_NO_IMAGEGEN else await generate_hq_images(prompt, 4)
+        images = (
+            await generate_images_dummy(prompt, 4)
+            if TESTING_NO_IMAGEGEN
+            else await generate_hq_images(prompt, 4)
+        )
         # images = await generate_images(prompt, 4)
         # images = await generate_hq_images(prompt, 4)
 
@@ -125,6 +145,23 @@ async def generate_images_dummy(_: str, n: int) -> List[DummyImageData]:
     return [DummyImageData(url="https://via.placeholder.com/1024x1024")] * n
 
 
+# Only model available is dall-e-2
+async def generate_variations(image: UploadFile, n: int):
+    """
+    Helper function to call Open AI Dall-E to generate variations of an Image
+    """
+    image_data = await image.read()
+    response = openai_client.images.create_variation(
+        model="dall-e-2",
+        # Not sure if both are same type.
+        # image=open("corgi_and_cat_paw.png", "rb"),
+        image=image_data,
+        n=n,
+        size="1024x1024",
+    )
+
+    return response.data
+
 # Quality options for dall-e 3: 1024x1024, 1024x1792 or 1792x1024
 # Quality options for dall-e 2: 256x256, 512x512, or 1024x1024
 # The only overlap is 1024x1024 so going with that.
@@ -140,6 +177,7 @@ async def generate_images(prompt: str, n: int):
     """
 
     return response.data
+
 
 async def generate_hq_images(prompt: str, n: int):
     q = deque()
