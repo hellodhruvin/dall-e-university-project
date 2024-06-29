@@ -1,16 +1,20 @@
 import { useEffect, useRef, useState } from "react";
-import { Label } from "./components/ui/label";
-import { Skeleton } from "./components/ui/skeleton";
-import { Textarea } from "./components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/use-toast";
 import { Toaster } from "@/components/ui/toaster";
-import { Button } from "./components/ui/button";
-import { ScrollArea } from "./components/ui/scroll-area";
-import { Separator } from "./components/ui/separator";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
 import { ChevronLeftIcon } from "@radix-ui/react-icons";
-//import { saveAs } from "file-saver";
+import { createLazyFileRoute } from "@tanstack/react-router";
 
-// TODO: Display these on front end above the prompt label
+export const Route = createLazyFileRoute("/generate")({
+  component: Generate,
+});
+
+// TODO: JSON FILE
 const SUGGESTIONS = {
   "Women's Day": [
     "Women of different ages under a banner that reads 'Happy Womens Day from GSFC Unversity' for Women's Day",
@@ -51,8 +55,7 @@ const SUGGESTIONS = {
   ],
 };
 
-function App() {
-  //const [count, setCount] = useState(0);
+function Generate() {
   const [prompt, setPrompt] = useState("");
   const [tip, setTip] = useState("Press 'Enter' key to submit.");
 
@@ -264,7 +267,9 @@ function App() {
                             onClick={() => {
                               setSelectedSuggestionCtx(null);
                               setPrompt(s);
-                              setTip("You can now edit this prompt and press 'Enter' key when you want to submit!")
+                              setTip(
+                                "You can now edit this prompt and press 'Enter' key when you want to submit!",
+                              );
                             }}
                           >
                             {s}
@@ -311,9 +316,7 @@ function App() {
                 }}
                 value={prompt}
               />
-              <p className="text-sm text-muted-foreground">
-                Tip: {tip}
-              </p>
+              <p className="text-sm text-muted-foreground">Tip: {tip}</p>
             </div>
           </div>
         </div>
@@ -322,5 +325,3 @@ function App() {
     </>
   );
 }
-
-export default App;
