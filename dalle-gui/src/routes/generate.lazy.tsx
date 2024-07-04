@@ -1,60 +1,31 @@
-import { useEffect, useRef, useState } from "react";
+import { Dispatch, useEffect, useRef, useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/use-toast";
-import { Toaster } from "@/components/ui/toaster";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { ChevronLeftIcon } from "@radix-ui/react-icons";
 import { createLazyFileRoute } from "@tanstack/react-router";
+import SUGGESTIONS from "../../public/suggestions.json";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 export const Route = createLazyFileRoute("/generate")({
   component: Generate,
 });
 
-// TODO: JSON FILE
-const SUGGESTIONS = {
-  "Women's Day": [
-    "Women of different ages under a banner that reads 'Happy Womens Day from GSFC Unversity' for Women's Day",
-    "Diverse women from different profesions celebrating women's day, with a backdrop of university buildings.",
-    "Female student holding a book with a GSFC University logo, surrounded by flowers and 'Happy Womens Day from GSFC University' text",
-    "Modern college featuring influential women in history with central focus on 'Women's Day celebration at GSFC Unversity'",
-    "Depiction of a Woman giving a lecture in a unversity, with the text 'Happy Women's Day from GSFC University'",
-  ],
-  "Orientation for firsty year students": [
-    "Excited first-year under graduate students arriving at university campus for orientation, with 'Welcome to GSFC University' banners.",
-    "Group of diverse freshers exploring university campus with 'Welcome to GSFC University' banner on a poster somewhere.",
-    "Modern collage of orientation events such as campus tours, informative sessions, featuring enthusiastic first-year students.",
-    "Bright and colorful image of students participating in orientation workshops with gsfc university staff and volunteers assisting them.",
-    "Depiction of first year students attending a welcome speech in a large auditorium with banners and decorations highlighting 'GSFC University Orientation'",
-  ],
-  "Foundation day at GSFC University": [
-    "Illustration of GSFC University campus with festive decorations, students & faculties celebrating 'Foundation Day'",
-    "Depiction of a stage with a speaker, GSFC University logo in the backdrop, and a large audience of interested students in an auditorium.",
-  ],
-  "Independence/Republic Day": [
-    "Illustration of students and faculty of GSFC University hoisting the indian flag with patriotic decorations in the background for Independence Day celebration.",
-    "Digital art of a parade on GSFC University campus, featuring students in Indian traditional attire, with Tricolor from Indian flag being displayed prominently.",
-    "Group of students performing cultural dances and songs to celebrate Indian Independence Day at GSFC University.",
-    "Modern collage of Independence day activities at GSFC University, such as flag-hoisting ceremonies, patriotic speeches, cultural performances",
-    "Bright and colorful image of students hoisting a giant indian flag on the university grounds, surrounded by tricolor decorations.",
-    "Depiction of students and faculties celebrating Indian Republic Day at GSFC University.",
-    "Illustration of students creating rangoli decorations featuring indian flag and other patriotic symbols for Independence day celebration at GSFC University",
-    "Students at GSFC University participating in a Republic Day flag-hoisting ceremony with festive decorations.",
-    "Republic day parade at GSFC University campus, featuring students dressed in traditional indian attire and holding indian flag.",
-    "Depiction of students performing cultural dances and songs celebrating Republic Day with a GSFC University backdrop.",
-    "Modern collage of Republic Day Events at GSFC University, including flag-hoisting, speeches, cultural performance that highlights indian heritage.",
-  ],
-  Ananta: [
-    "Illustration of students participating in GSFC University technical event, 'Ananta', doing various technical workshops and competitions.",
-    "Digital art of an auditorium stage with a speakers showcasing keynote adn tech demos at GSFC University technical event, 'Ananta'.",
-    "Modern collage of GSFC University technical event 'Ananta', showcasing coding competitions, tech exhibitions, and enthusiastic participants.",
-    "Depiction of students participating in a hackathon with laptops, code and brainstorming discussions under the banner of 'Ananta', the GSFC University technical event.",
-  ],
-};
-
+// There is one key error that happens in console when we click on any of the
+// suggestions, but we know the react compiler is so amazing it told us exactly
+// where it is.
 function Generate() {
   const [prompt, setPrompt] = useState("");
   const [tip, setTip] = useState("Press 'Enter' key to submit.");
@@ -63,6 +34,18 @@ function Generate() {
   const [image2, setImage2] = useState("");
   const [image3, setImage3] = useState("");
   const [image4, setImage4] = useState("");
+
+  function clearImages() {
+    setImage1("");
+    setImage2("");
+    setImage3("");
+    setImage4("");
+  }
+
+  const [wantVariation, setWantVariation] = useState<boolean>(false);
+
+  const imageFileInputRef = useRef<HTMLInputElement>(null);
+  const [imageFile, setImageFile] = useState<File | undefined>(undefined);
 
   const [fetching, setFetching] = useState(false);
 
@@ -73,6 +56,7 @@ function Generate() {
   const textAreaRef = useRef<HTMLTextAreaElement>(null);
 
   async function saveAs(url: string, name: string) {
+    // Above doesn't work btw it's just here for legacy.
     const a = document.createElementNS(
       "http://www.w3.org/1999/xhtml",
       "a",
@@ -107,40 +91,204 @@ function Generate() {
     // Can't idiots just right click and download image?
   }
 
-  async function generateImages(prompt: string) {
-    setImage1("");
-    setImage2("");
-    setImage3("");
-    setImage4("");
+  async function generateVariations(file: File) {
+    clearImages();
     setFetching(true);
 
-    const apiUrl = `http://127.0.0.1:8000/generate-image?prompt=${encodeURIComponent(prompt)}`;
+    const apiUrl = `http://127.0.0.1:8000/variations`;
 
-    let res = await fetch(apiUrl);
+    try {
+      const formData = new FormData();
+      formData.append("image", file);
 
-    console.log({ res });
+      let res = await fetch(apiUrl, {
+        body: formData,
+        method: "POST",
+      });
 
-    if (!res.ok) {
+      if (!res.ok) {
+        toast({
+          title: "An error has occured. Please report this to developers.",
+          variant: "destructive",
+          description: (
+            <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4 break-normal whitespace-pre-wrap">
+              <code className="text-white">{"API Call has failed"}</code>
+            </pre>
+          ),
+        });
+        setFetching(false);
+        return;
+      }
+
+      let data = await res.json();
+      setImage1(data.images[0].url);
+      setImage2(data.images[1].url);
+      setImage3(data.images[2].url);
+      setImage4(data.images[3].url);
+
+      setFetching(false);
+    } catch (e: any) {
       toast({
-        title: "An error has occured. Please report this to developers.",
+        title:
+          "API Call failed because an error has occured. Please report this to developers.",
         variant: "destructive",
         description: (
           <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4 break-normal whitespace-pre-wrap">
-            <code className="text-white">{"API Call has failed"}</code>
+            <code className="text-white">{e.toString()}</code>
           </pre>
         ),
       });
+      console.error(e);
       setFetching(false);
       return;
     }
 
-    let data = await res.json();
-    setImage1(data.images[0].url);
-    setImage2(data.images[1].url);
-    setImage3(data.images[2].url);
-    setImage4(data.images[3].url);
+    //console.log({ data })
+  }
 
-    setFetching(false);
+  async function generateVariation(file: File, setter: Dispatch<string>) {
+    setter("");
+    setFetching(true);
+
+    const apiUrl = `http://127.0.0.1:8000/variation`;
+
+    try {
+      const formData = new FormData();
+      formData.append("image", file);
+
+      let res = await fetch(apiUrl, {
+        body: formData,
+        method: "POST",
+      });
+
+      if (!res.ok) {
+        toast({
+          title: "An error has occured. Please report this to developers.",
+          variant: "destructive",
+          description: (
+            <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4 break-normal whitespace-pre-wrap">
+              <code className="text-white">{"API Call has failed"}</code>
+            </pre>
+          ),
+        });
+        setFetching(false);
+        return;
+      }
+
+      let data = await res.json();
+      setter(data.images[0].url);
+
+      setFetching(false);
+    } catch (e: any) {
+      toast({
+        title:
+          "API Call failed because an error has occured. Please report this to developers.",
+        variant: "destructive",
+        description: (
+          <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4 break-normal whitespace-pre-wrap">
+            <code className="text-white">{e.toString()}</code>
+          </pre>
+        ),
+      });
+      console.error(e);
+      setFetching(false);
+      return;
+    }
+
+    //console.log({ data })
+  }
+
+  async function generateImage(prompt: string, setter: Dispatch<string>) {
+    setter("");
+    setFetching(true);
+
+    const apiUrl = `http://127.0.0.1:8000/generate-image?prompt=${encodeURIComponent(prompt)}`;
+
+    try {
+      let res = await fetch(apiUrl);
+
+      if (!res.ok) {
+        toast({
+          title: "An error has occured. Please report this to developers.",
+          variant: "destructive",
+          description: (
+            <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4 break-normal whitespace-pre-wrap">
+              <code className="text-white">{"API Call has failed"}</code>
+            </pre>
+          ),
+        });
+        setFetching(false);
+        return;
+      }
+
+      let data = await res.json();
+      setter(data.images[0].url);
+
+      setFetching(false);
+    } catch (e: any) {
+      toast({
+        title:
+          "API Call failed because an error has occured. Please report this to developers.",
+        variant: "destructive",
+        description: (
+          <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4 break-normal whitespace-pre-wrap">
+            <code className="text-white">{e.toString()}</code>
+          </pre>
+        ),
+      });
+      setFetching(false);
+      console.error(e);
+      return;
+    }
+
+    //console.log({ data })
+  }
+
+  async function generateImages(prompt: string) {
+    clearImages();
+    setFetching(true);
+
+    const apiUrl = `http://127.0.0.1:8000/generate-images?prompt=${encodeURIComponent(prompt)}`;
+
+    try {
+      let res = await fetch(apiUrl);
+
+      if (!res.ok) {
+        toast({
+          title: "An error has occured. Please report this to developers.",
+          variant: "destructive",
+          description: (
+            <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4 break-normal whitespace-pre-wrap">
+              <code className="text-white">{"API Call has failed"}</code>
+            </pre>
+          ),
+        });
+        setFetching(false);
+        return;
+      }
+
+      let data = await res.json();
+      setImage1(data.images[0].url);
+      setImage2(data.images[1].url);
+      setImage3(data.images[2].url);
+      setImage4(data.images[3].url);
+
+      setFetching(false);
+    } catch (e: any) {
+      toast({
+        title:
+          "API Call failed because an error has occured. Please report this to developers.",
+        variant: "destructive",
+        description: (
+          <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4 break-normal whitespace-pre-wrap">
+            <code className="text-white">{e.toString()}</code>
+          </pre>
+        ),
+      });
+      setFetching(false);
+      console.error(e);
+      return;
+    }
 
     //console.log({ data })
   }
@@ -164,164 +312,278 @@ function Generate() {
 
   return (
     <>
-      <main className="h-screen">
-        <div className="flex bg-primary w-full py-2 text-primary-foreground items-center justify-between">
-          <img src="/gsfc-logo-white.png" className="h-12 w-auto" />
-          <h1 className="text-lg font-bold">Social Media Image Generator</h1>
-          {/*
-              This is literally the same image here but it's invisible so that
-              the text is properly centered. Hack but need to get things
-              working quick.
-          */}
-          <img src="/gsfc-logo-white.png" className="h-12 w-auto invisible" />
-        </div>
-
-        <div className="flex h-full justify-center">
-          <div className="flex flex-col space-y-4 pt-12">
-            <div className="flex w-full space-x-2 justify-around">
-              {image1 ? (
-                <div className="flex flex-col space-y-1">
-                  <img
-                    alt="Loading Image 1"
-                    src={image1}
-                    className="h-[192px] w-[192px]"
-                  />
-                  <Button onClick={() => downloadImage(image1)}>
-                    Download
+      <div className="flex h-full justify-center">
+        <div className="flex flex-col space-y-4 pt-12">
+          <div className="flex w-full space-x-2 justify-around">
+            {image1 ? (
+              <div className="flex flex-col space-y-1">
+                <img
+                  alt="Loading Image 1"
+                  src={image1}
+                  className="h-[192px] w-[192px]"
+                />
+                <div className="flex justify-between items-center w-full space-x-2">
+                  <Button
+                    onClick={() => downloadImage(image1)}
+                    className="w-full"
+                  >
+                    Open
+                  </Button>
+                  <Button
+                    className="w-full"
+                    onClick={() => {
+                      wantVariation
+                        ? imageFile && generateVariation(imageFile, setImage1)
+                        : generateImage(prompt, setImage1);
+                    }}
+                  >
+                    Refresh
                   </Button>
                 </div>
-              ) : (
-                <Skeleton className="h-[192px] w-[192px]" />
-              )}
-              {image2 ? (
-                <>
-                  <div className="flex flex-col space-y-1">
-                    <img
-                      alt="Loading Image 2"
-                      src={image2}
-                      className="h-[192px] w-[192px]"
-                    />
-                    <Button onClick={() => downloadImage(image2)}>
-                      Download
+              </div>
+            ) : (
+              <Skeleton className="h-[192px] w-[192px]" />
+            )}
+            {image2 ? (
+              <>
+                <div className="flex flex-col space-y-1">
+                  <img
+                    alt="Loading Image 2"
+                    src={image2}
+                    className="h-[192px] w-[192px]"
+                  />
+                  <div className="flex justify-between items-center w-full space-x-2">
+                    <Button
+                      onClick={() => downloadImage(image2)}
+                      className="w-full"
+                    >
+                      Open
+                    </Button>
+                    <Button
+                      className="w-full"
+                      onClick={() => {
+                        wantVariation
+                          ? imageFile && generateVariation(imageFile, setImage2)
+                          : generateImage(prompt, setImage2);
+                      }}
+                    >
+                      Refresh
                     </Button>
                   </div>
-                </>
-              ) : (
-                <Skeleton className="h-[192px] w-[192px]" />
-              )}
-              {image3 ? (
-                <>
-                  <div className="flex flex-col space-y-1">
-                    <img
-                      alt="Loading Image 3"
-                      src={image3}
-                      className="h-[192px] w-[192px]"
-                    />
-                    <Button onClick={() => downloadImage(image3)}>
-                      Download
+                </div>
+              </>
+            ) : (
+              <Skeleton className="h-[192px] w-[192px]" />
+            )}
+            {image3 ? (
+              <>
+                <div className="flex flex-col space-y-1">
+                  <img
+                    alt="Loading Image 3"
+                    src={image3}
+                    className="h-[192px] w-[192px]"
+                  />
+                  <div className="flex justify-between items-center w-full space-x-2">
+                    <Button
+                      onClick={() => downloadImage(image3)}
+                      className="w-full"
+                    >
+                      Open
+                    </Button>
+                    <Button
+                      className="w-full"
+                      onClick={() => {
+                        wantVariation
+                          ? imageFile && generateVariation(imageFile, setImage3)
+                          : generateImage(prompt, setImage3);
+                      }}
+                    >
+                      Refresh
                     </Button>
                   </div>
-                </>
-              ) : (
-                <Skeleton className="h-[192px] w-[192px]" />
-              )}
-              {image4 ? (
-                <>
-                  <div className="flex flex-col space-y-1">
-                    <img
-                      alt="Loading Image 4"
-                      src={image4}
-                      className="h-[192px] w-[192px]"
-                    />
-                    <Button onClick={() => downloadImage(image4)}>
-                      Download
+                </div>
+              </>
+            ) : (
+              <Skeleton className="h-[192px] w-[192px]" />
+            )}
+            {image4 ? (
+              <>
+                <div className="flex flex-col space-y-1">
+                  <img
+                    alt="Loading Image 4"
+                    src={image4}
+                    className="h-[192px] w-[192px]"
+                  />
+                  <div className="flex justify-between items-center w-full space-x-2">
+                    <Button
+                      onClick={() => downloadImage(image4)}
+                      className="w-full"
+                    >
+                      Open
+                    </Button>
+                    <Button
+                      className="w-full"
+                      onClick={() => {
+                        wantVariation
+                          ? imageFile && generateVariation(imageFile, setImage4)
+                          : generateImage(prompt, setImage4);
+                      }}
+                    >
+                      Refresh
                     </Button>
                   </div>
-                </>
-              ) : (
-                <Skeleton className="h-[192px] w-[192px]" />
-              )}
-            </div>
-            <div>
-              {!prompt && selectedSuggestionCtx && (
-                <>
-                  <ScrollArea className="h-48 w-full rounded-md border">
-                    <div className="p-4">
-                      <div className="flex mb-2">
+                </div>
+              </>
+            ) : (
+              <Skeleton className="h-[192px] w-[192px]" />
+            )}
+          </div>
+          <div>
+            <Card>
+              <CardHeader>
+                <CardTitle>
+                  {wantVariation ? "Variate an image" : "Generate Images"}
+                </CardTitle>
+                <CardDescription>
+                  <div className="flex items-center space-x-2 text-primary">
+                    <Label htmlFor="want-variation">Generate</Label>
+                    <Switch
+                      id="want-variation"
+                      disabled={fetching}
+                      checked={wantVariation}
+                      onCheckedChange={(c) => {
+                        clearImages();
+
+                        setWantVariation(c);
+                      }}
+                    />
+                    <Label htmlFor="want-variation">Variate</Label>
+                  </div>
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {wantVariation && (
+                  <>
+                    <div className="grid w-full items-center gap-1.5">
+                      <Label htmlFor="background">Image</Label>
+                      <div className="flex space-x-2 justify-center items-center">
+                        <Input
+                          ref={imageFileInputRef}
+                          id="image"
+                          type="file"
+                          accept="image/png"
+                          disabled={fetching}
+                          onChange={(e) => setImageFile(e.target.files?.[0])}
+                          className="file:bg-primary file:text-primary-foreground
+                      file:shadow hover:file:bg-primary/90 file:h-9 file:px-4
+                      file:py-2 inline-flex items-center justify-center
+                      whitespace-nowrap file:rounded-md file:text-sm
+                      file:font-medium file:transition-colors
+                      file:focus-visible:outline-none file:focus-visible:ring-1
+                      file:focus-visible:ring-ring h-12 cursor-pointer"
+                        />
                         <Button
-                          variant="ghost"
-                          className="pl-2"
-                          onClick={() => setSelectedSuggestionCtx(null)}
+                          onClick={() =>
+                            imageFile && generateVariations(imageFile)
+                          }
+                          className="h-full"
+                          disabled={!imageFile || fetching}
                         >
-                          <ChevronLeftIcon className="mr-2 h-4 w-4" />{" "}
-                          <h4 className="text-sm font-medium ">
-                            {selectedSuggestionCtx}
-                          </h4>
+                          Go
                         </Button>
                       </div>
-                      {SUGGESTIONS[selectedSuggestionCtx].map((s, idx) => (
-                        <>
-                          <div
-                            key={s}
-                            className="text-sm cursor-pointer"
-                            onClick={() => {
-                              setSelectedSuggestionCtx(null);
-                              setPrompt(s);
-                              setTip(
-                                "You can now edit this prompt and press 'Enter' key when you want to submit!",
-                              );
-                            }}
-                          >
-                            {s}
-                          </div>
-                          {idx + 1 !==
-                            SUGGESTIONS[selectedSuggestionCtx].length && (
-                            <Separator className="my-2" />
-                          )}
-                        </>
-                      ))}
                     </div>
-                  </ScrollArea>
-                </>
-              )}
-              {!prompt && !selectedSuggestionCtx && (
-                <div className="flex space-x-2 w-full justify-around">
-                  {Object.keys(SUGGESTIONS).map((k, idx) => {
-                    // Isn't typescript just amazing?
-                    return (
-                      <Button
-                        key={idx}
-                        onClick={() =>
-                          setSelectedSuggestionCtx(
-                            k as keyof typeof SUGGESTIONS,
-                          )
-                        }
-                      >
-                        {k}
-                      </Button>
-                    );
-                  })}
-                </div>
-              )}
-              <Label htmlFor="prompt">Prompt:</Label>
-              <Textarea
-                id="prompt"
-                ref={textAreaRef}
-                placeholder="Type your prompt here."
-                maxLength={999}
-                rows={9}
-                disabled={fetching}
-                onChange={(e) => {
-                  setPrompt(e.target.value);
-                }}
-                value={prompt}
-              />
-              <p className="text-sm text-muted-foreground">Tip: {tip}</p>
-            </div>
+                  </>
+                )}
+                {!prompt && selectedSuggestionCtx && !wantVariation && (
+                  <>
+                    <ScrollArea className="h-48 w-full rounded-md border">
+                      <div className="p-4">
+                        <div className="flex mb-2">
+                          <Button
+                            variant="ghost"
+                            className="pl-2"
+                            onClick={() => setSelectedSuggestionCtx(null)}
+                          >
+                            <ChevronLeftIcon className="mr-2 h-4 w-4" />{" "}
+                            <h4 className="text-sm font-medium ">
+                              {selectedSuggestionCtx}
+                            </h4>
+                          </Button>
+                        </div>
+                        {SUGGESTIONS[selectedSuggestionCtx].map((s, idx) => (
+                          <>
+                            <div
+                              key={idx}
+                              className="text-sm cursor-pointer"
+                              onClick={() => {
+                                setSelectedSuggestionCtx(null);
+                                setPrompt(s);
+                                setTip(
+                                  "You can now edit this prompt and press 'Enter' key when you want to submit!",
+                                );
+                              }}
+                            >
+                              {s}
+                            </div>
+                            {idx + 1 !==
+                              SUGGESTIONS[selectedSuggestionCtx].length && (
+                              <Separator
+                                key={
+                                  // Just to satisfy uniqueness. Amazing react, I know.
+                                  idx +
+                                  SUGGESTIONS[selectedSuggestionCtx].length
+                                }
+                                className="my-2"
+                              />
+                            )}
+                          </>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  </>
+                )}
+                {!prompt && !selectedSuggestionCtx && !wantVariation && (
+                  <div className="flex space-x-2 w-full justify-around">
+                    {Object.keys(SUGGESTIONS).map((k, idx) => {
+                      return (
+                        <Button
+                          key={idx}
+                          onClick={() =>
+                            setSelectedSuggestionCtx(
+                              k as keyof typeof SUGGESTIONS,
+                            )
+                          }
+                        >
+                          {k}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                )}
+                {!wantVariation && (
+                  <>
+                    <Label htmlFor="prompt">Prompt:</Label>
+                    <Textarea
+                      id="prompt"
+                      ref={textAreaRef}
+                      placeholder="Type your prompt here."
+                      maxLength={999}
+                      rows={9}
+                      disabled={fetching}
+                      onChange={(e) => {
+                        setPrompt(e.target.value);
+                      }}
+                      value={prompt}
+                    />
+                    <p className="text-sm text-muted-foreground">Tip: {tip}</p>
+                  </>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </div>
-        <Toaster />
-      </main>
+      </div>
     </>
   );
 }

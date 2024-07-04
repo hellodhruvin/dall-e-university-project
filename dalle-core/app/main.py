@@ -44,10 +44,14 @@ async def api_status_check():
     return {"Status": "Online"}
 
 
-@app.get("/variations")
-async def api_generate_variations(image: UploadFile):
+@app.post("/variation")
+async def api_generate_variation(image: UploadFile):
     try:
-        images = await generate_variations(image, 4)
+        images = (
+            await generate_images_dummy("", 1)
+            if TESTING_NO_IMAGEGEN
+            else await generate_variations(image, 1)
+        )
 
         q = deque()
 
@@ -60,8 +64,28 @@ async def api_generate_variations(image: UploadFile):
         raise HTTPException(500, "INTERNAL_API_ERROR")
 
 
-@app.get("/generate-image-hq")
-async def api_generate_image_high_quality(prompt: Union[str, None] = None):
+@app.post("/variations")
+async def api_generate_variations(image: UploadFile):
+    try:
+        images = (
+            await generate_images_dummy("", 4)
+            if TESTING_NO_IMAGEGEN
+            else await generate_variations(image, 4)
+        )
+
+        q = deque()
+
+        for img in images:
+            q.append({"url": img.url})
+
+        return {"images": q}
+    except openai.OpenAIError as e:
+        print(e)
+        raise HTTPException(500, "INTERNAL_API_ERROR")
+
+
+@app.get("/generate-image")
+async def api_generate_image(prompt: Union[str, None] = None):
     """
     API Route to generate an image using a prompt string
     """
@@ -76,9 +100,13 @@ async def api_generate_image_high_quality(prompt: Union[str, None] = None):
         )
 
     try:
-        # images = await generate_images_dummy(prompt, 4)
-        images = await generate_image_dalle3(prompt)
+        images = (
+            await generate_images_dummy(prompt, 1)
+            if TESTING_NO_IMAGEGEN
+            else await generate_single_image(prompt)
+        )
 
+        # Don't blame me for this queue, its them who returns an array.
         q = deque()
 
         # Inline for didn't quite cutout and using queue is fancy so why not.
@@ -91,8 +119,8 @@ async def api_generate_image_high_quality(prompt: Union[str, None] = None):
         raise HTTPException(500, "INTERNAL_API_ERROR")
 
 
-@app.get("/generate-image")
-async def api_generate_image(prompt: Union[str, None] = None):
+@app.get("/generate-images")
+async def api_generate_images(prompt: Union[str, None] = None):
     """
     API Route to generate an image using a prompt string
     """
@@ -162,33 +190,20 @@ async def generate_variations(image: UploadFile, n: int):
 
     return response.data
 
+
 # Quality options for dall-e 3: 1024x1024, 1024x1792 or 1792x1024
 # Quality options for dall-e 2: 256x256, 512x512, or 1024x1024
 # The only overlap is 1024x1024 so going with that.
-# Mostly I think we should go with dall-e-2 because not only does it allow
-# generation of multiple images, it also has masks/variations which are not in
-# dall-e-3 (yet)
-async def generate_images(prompt: str, n: int):
-    response = openai_client.images.generate(
-        prompt=prompt, model="dall-e-2", size="1024x1024", n=n
-    )
-    """
-    Helper function to call Open AI Dall-E to generate the image
-    """
-
-    return response.data
-
-
 async def generate_hq_images(prompt: str, n: int):
     q = deque()
 
     for _ in range(n):
-        q.append((await generate_image_dalle3(prompt))[0])
+        q.append((await generate_single_image(prompt))[0])
 
     return q
 
 
-async def generate_image_dalle3(prompt: str):
+async def generate_single_image(prompt: str):
     response = openai_client.images.generate(
         prompt=prompt, model="dall-e-3", size="1024x1024", n=1
     )
