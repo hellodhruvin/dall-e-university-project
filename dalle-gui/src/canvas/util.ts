@@ -35,6 +35,14 @@ const caching_disabled: ICachingDisabled = {
   objectCaching: false,
 };
 
+interface ICircleOptions {
+  x: number;
+  y: number;
+  radius: number;
+  fill: string;
+  opacity: number;
+}
+
 /**
  * Draws a circle on the canvas
  * @param x - X coordinate of the circle
@@ -44,12 +52,9 @@ const caching_disabled: ICachingDisabled = {
  * @param opacity - Opacity of the circle
  * @returns - The created circle
  */
-export const drawCircle = (
-  x: number,
-  y: number,
-  radius: number,
-  fill: string,
-  opacity: number,
+export const drawCircle = async (
+  { x, y, radius, fill, opacity }: ICircleOptions,
+  { selectable }: ISelectable,
 ) => {
   const circle = new fabric.Circle({
     left: x,
@@ -57,13 +62,37 @@ export const drawCircle = (
     radius: radius,
     fill: fill,
     opacity: opacity,
-    selectable: false,
-    moveCursor: "default",
-    hoverCursor: "default",
     ...caching_disabled,
+    ...getMovableProps(selectable),
   });
 
   return circle;
+};
+
+interface ISquareOptions {
+  x: number;
+  y: number;
+  size: number;
+  fill: string;
+  opacity: number;
+}
+
+export const drawSquare = async (
+  { x, y, size, fill, opacity }: ISquareOptions,
+  { selectable }: ISelectable,
+) => {
+  const square = new fabric.Rect({
+    left: x,
+    top: y,
+    height: size,
+    width: size,
+    fill: fill,
+    opacity: opacity,
+    ...caching_disabled,
+    ...getMovableProps(selectable),
+  });
+
+  return square;
 };
 
 interface IDimensions {
@@ -163,15 +192,31 @@ export const drawText = (
 export const drawSvg = async (url: string, { selectable }: ISelectable) => {
   const { objects } = await fabric.loadSVGFromURL(url);
 
+  let props = getMovableProps(selectable);
+
   const object = fabric.util.groupSVGElements(
     // Just a filter to avoid mischiveous svg images, though I could have just
     // type cast to make ts happy.
     objects.filter((o) => o !== null),
     {
       ...caching_disabled,
-      ...getMovableProps(selectable),
+      ...props,
     },
   );
 
+  Object.entries(props).forEach(([k, v]) => object.set(k, v));
+  Object.entries(caching_disabled).forEach(([k, v]) => object.set(k, v));
+
   return object;
 };
+
+export function debug_fabric_obj(object: fabric.FabricObject) {
+  object.on("mousedown", () => {
+    console.log({
+      top: object.get("top"),
+      left: object.get("left"),
+      height: object.getScaledHeight(),
+      width: object.getScaledWidth(),
+    });
+  });
+}
