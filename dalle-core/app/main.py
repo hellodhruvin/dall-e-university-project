@@ -9,8 +9,8 @@ from openai import Client
 
 from dotenv import load_dotenv
 
-# Just set this to True if you want to generate actual images, or False to just
-# use placeholders so that credits don't get consumed when working on front end
+# Set to True if you are in TESTING mode
+# Otherwise set to False so it doesn't consume our credits
 TESTING_NO_IMAGEGEN = False
 
 load_dotenv()

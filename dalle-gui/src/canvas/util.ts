@@ -204,8 +204,27 @@ export const drawSvg = async (url: string, { selectable }: ISelectable) => {
     },
   );
 
-  Object.entries(props).forEach(([k, v]) => object.set(k, v));
-  Object.entries(caching_disabled).forEach(([k, v]) => object.set(k, v));
+  Object.keys(props).forEach((k) => {
+    // @ts-ignore
+    object.set(k, props[k]);
+  });
+
+  Object.keys(caching_disabled).forEach((k) => {
+    // @ts-ignore
+    object.set(k, caching_disabled[k]);
+  });
+
+  //Object.entries(props).forEach(([k, v]) => {
+  //  if (props.hasOwnProperty(k)) {
+  //    object.set(k, v);
+  //  }
+  //});
+  //
+  //Object.entries(caching_disabled).forEach(([k, v]) => {
+  //  if (caching_disabled.hasOwnProperty(k)) {
+  //    object.set(k, v);
+  //  }
+  //});
 
   return object;
 };

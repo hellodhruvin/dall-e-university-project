@@ -11,7 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { cn, wait } from "@/lib/utils";
 import {
   Popover,
   PopoverContent,
@@ -169,7 +169,6 @@ export function TemplatePlacment({ fabricCanvasRef }: ITemplatePlacementProps) {
 
       img.top = 42;
       img.left = 231;
-      debug_fabric_obj(img);
 
       fabricCanvas.add(img);
 
@@ -202,16 +201,21 @@ export function TemplatePlacment({ fabricCanvasRef }: ITemplatePlacementProps) {
 
   // Make this more readable, use currying, make the functions take parameters for a lot of manually adjusted stuff.
   async function drawPlacementTemplateStuff() {
+    console.log("Hello");
     if (fabricCanvasRef.current) {
+      console.log("Hello");
       const fabricCanvas = fabricCanvasRef.current;
 
-      const circle = drawCircle({
-        x: -270,
-        y: -451,
-        radius: 412,
-        fill: "white",
-        opacity: 1
-      }, { selectable: false });
+      const circle = await drawCircle(
+        {
+          x: -270,
+          y: -451,
+          radius: 412,
+          fill: "white",
+          opacity: 1,
+        },
+        { selectable: false },
+      );
 
       fabricCanvas.add(circle);
 
@@ -320,7 +324,6 @@ export function TemplatePlacment({ fabricCanvasRef }: ITemplatePlacementProps) {
     }
   }
 
-
   function clearFabricCanvas() {
     if (fabricCanvasRef.current) {
       const fabricCanvas = fabricCanvasRef.current;
@@ -331,7 +334,7 @@ export function TemplatePlacment({ fabricCanvasRef }: ITemplatePlacementProps) {
   }
 
   useEffect(() => {
-    clearFabricCanvas()
+    clearFabricCanvas();
     return clearFabricCanvas();
   }, []);
 
@@ -376,6 +379,9 @@ export function TemplatePlacment({ fabricCanvasRef }: ITemplatePlacementProps) {
     // TOOD: Remove if later when validation is added
     if (imageFile) {
       await drawBackground();
+
+      await wait(500);
+
       await drawPlacementTemplateStuff();
     }
 
@@ -411,7 +417,7 @@ export function TemplatePlacment({ fabricCanvasRef }: ITemplatePlacementProps) {
     setCompanyLogoFile(undefined);
     setCompanyLogoUrl("");
 
-    clearFabricCanvas()
+    clearFabricCanvas();
   }
 
   return (
