@@ -313,7 +313,7 @@ function Generate() {
   return (
     <>
       <div className="flex h-full justify-center">
-        <div className="flex flex-col space-y-4 pt-12">
+        <div className="flex flex-col space-y-4 pt-4">
           <div className="flex w-full space-x-2 justify-around">
             {image1 ? (
               <div className="flex flex-col space-y-1">
@@ -495,6 +495,11 @@ function Generate() {
                     </div>
                   </>
                 )}
+                {!prompt && !wantVariation && (
+                  <>
+                    <Label>Suggestions:</Label>
+                  </>
+                )}
                 {!prompt && selectedSuggestionCtx && !wantVariation && (
                   <>
                     <ScrollArea className="h-48 w-full rounded-md border">
@@ -577,6 +582,15 @@ function Generate() {
                       value={prompt}
                     />
                     <p className="text-sm text-muted-foreground">Tip: {tip}</p>
+                    <div className="w-full flex justify-center items-center">
+                      <Button
+                        onClick={() => {
+                          generateImages(prompt);
+                        }}
+                      >
+                        Generate
+                      </Button>
+                    </div>
                   </>
                 )}
               </CardContent>

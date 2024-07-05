@@ -1,4 +1,5 @@
 import { format } from "date-fns";
+import * as fabric from "fabric";
 import { useEffect, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,11 +18,14 @@ import { Calendar } from "@/components/ui/calendar";
 import {
   debug_fabric_obj,
   drawCircle,
+  drawRectangle,
   drawScaledImageFromURL,
   drawSquare,
+  drawSquareCroppedImageFromURL,
   drawSquareScaledImageFromURL,
   drawSvg,
   drawText,
+  drawTextBox,
 } from "@/canvas/util";
 import { CONSTANTS } from "@/ui/CONSTANTS";
 import { Canvas, Line } from "fabric";
@@ -154,6 +158,477 @@ export function TemplateSeminar({ fabricCanvasRef }: ITemplateSeminarProps) {
       //debug_fabric_obj(logo)
       fabricCanvas.add(logo);
 
+      const seminar_on_text = drawText(
+        "Seminar on",
+        {
+          color: "white",
+          fontSize: 30,
+          italic: true,
+          bold: false,
+          underline: true,
+          fontFamily: "Inter",
+        },
+        { selectable: false },
+      );
+
+      seminar_on_text.left = (512 - seminar_on_text.get("width")) / 2;
+      seminar_on_text.top = 40;
+
+      fabricCanvas.add(seminar_on_text);
+
+      const topic_text = drawText(
+        topic,
+        {
+          color: CONSTANTS.blue,
+          fontSize: 32,
+          italic: false,
+          bold: true,
+          underline: false,
+          fontFamily: "Inter",
+        },
+        { selectable: false },
+      );
+
+      topic_text.left = (512 - topic_text.get("width")) / 2;
+      topic_text.top = 90;
+
+      function paddingRect(
+        text: fabric.FabricText,
+        color: string,
+        { x, y, rx, ry }: { x: number; y: number; rx: number; ry: number },
+      ) {
+        const boundingRect = new fabric.Rect({
+          left: text.left - x,
+          top: text.top - y,
+          width: text.getBoundingRect().width + 2 * x,
+          height: text.getBoundingRect().height + 2 * y,
+          fill: color,
+          rx: rx,
+          ry: ry,
+          selectable: false,
+          evented: false,
+        });
+
+        return boundingRect;
+      }
+
+      const backgroundRect = paddingRect(topic_text, CONSTANTS.orange, {
+        x: 12,
+        y: 4,
+        rx: 4,
+        ry: 4,
+      });
+
+      fabricCanvas.add(backgroundRect);
+      fabricCanvas.add(topic_text);
+
+      const rect = await drawRectangle(
+        {
+          x: 320,
+          y: 425,
+          height: 512 - 425,
+          width: 512 - 320,
+          fill: CONSTANTS.orange,
+          opacity: 1,
+        },
+        { selectable: false },
+      );
+
+      fabricCanvas.add(rect);
+
+      const dateText = drawText(
+        `Date: ${format(date, "PPP")}`,
+        {
+          color: "black",
+          fontSize: 14,
+          italic: false,
+          underline: false,
+          fontFamily: "Open Sans",
+        },
+        { selectable: false },
+      );
+
+      dateText.left = 320 + 35;
+      dateText.top = 430 + 10;
+
+      fabricCanvas.add(dateText);
+
+      const calendarIcon = await drawSvg("/calendar-icon.svg", {
+        selectable: false,
+      });
+
+      calendarIcon.top = 430 + 8;
+      calendarIcon.left = 320 + 12;
+
+      fabricCanvas.add(calendarIcon);
+
+      const venueText = drawText(
+        `Venue: ${venue}`,
+        {
+          color: "black",
+          fontSize: 14,
+          italic: false,
+          underline: false,
+          fontFamily: "Open Sans",
+        },
+        { selectable: false },
+      );
+
+      venueText.left = 320 + 15;
+      venueText.top = 430 + 50;
+
+      fabricCanvas.add(venueText);
+
+      const eventCoordText = drawText(
+        "Event Coordinator:",
+        {
+          color: CONSTANTS.blue,
+          fontSize: 14,
+          italic: false,
+          bold: true,
+          underline: false,
+          fontFamily: "Open Sans",
+        },
+        { selectable: false },
+      );
+
+      eventCoordText.top = 430 + 10;
+      eventCoordText.left = 25;
+
+      const ev_rect = paddingRect(eventCoordText, "white", {
+        x: 4,
+        y: 4,
+        rx: 0,
+        ry: 0,
+      });
+
+      ev_rect.width = ev_rect.get("width") + 25;
+      ev_rect.left = 0;
+
+      fabricCanvas.add(ev_rect);
+      fabricCanvas.add(eventCoordText);
+
+      const topic1 = drawTextBox(
+        `${firstTopic}`,
+        {
+          color: "white",
+          fontSize: 12,
+          italic: false,
+          bold: true,
+          width: 170,
+          underline: false,
+          fontFamily: "Open Sans",
+        },
+        { selectable: false },
+      );
+
+      topic1.top = 175;
+      topic1.left = 0;
+
+      fabricCanvas.add(topic1);
+
+      const topic2 = drawTextBox(
+        `${secondTopic}`,
+        {
+          color: "white",
+          fontSize: 12,
+          italic: false,
+          bold: true,
+          underline: false,
+          width: 170,
+          fontFamily: "Open Sans",
+        },
+        { selectable: false },
+      );
+
+      topic2.top = 175;
+      topic2.left = 170;
+
+      fabricCanvas.add(topic2);
+
+      const topic3 = drawTextBox(
+        `${thirdTopic}`,
+        {
+          color: "white",
+          fontSize: 12,
+          italic: false,
+          width: 170,
+          bold: true,
+          underline: false,
+          fontFamily: "Open Sans",
+        },
+        { selectable: false },
+      );
+
+      topic3.top = 175;
+      topic3.left = 342;
+
+      fabricCanvas.add(topic3);
+
+      const photo1 = await drawSquareScaledImageFromURL(firstPictureUrl, 100, {
+        selectable: true,
+      });
+
+      const photo2 = await drawSquareScaledImageFromURL(secondPictureUrl, 100, {
+        selectable: true,
+      });
+
+      const photo3 = await drawSquareScaledImageFromURL(thirdPictureUrl, 100, {
+        selectable: true,
+      });
+
+      photo3.top = 240;
+      photo3.left = 342 + 35;
+
+      fabricCanvas.add(photo3);
+
+      photo2.top = 240;
+      photo2.left = 170 + 35;
+
+      fabricCanvas.add(photo2);
+
+      photo1.top = 240;
+      photo1.left = 35;
+
+      fabricCanvas.add(photo1);
+
+      const name1 = drawTextBox(
+        `${firstName}`,
+        {
+          color: CONSTANTS.orange,
+          fontSize: 12,
+          italic: false,
+          bold: true,
+          width: 170,
+          underline: false,
+          fontFamily: "Open Sans",
+        },
+        { selectable: false },
+      );
+
+      name1.top = 355;
+      name1.left = 0;
+
+      fabricCanvas.add(name1);
+
+      const name2 = drawTextBox(
+        `${secondName}`,
+        {
+          color: CONSTANTS.orange,
+          fontSize: 12,
+          italic: false,
+          bold: true,
+          width: 170,
+          underline: false,
+          fontFamily: "Open Sans",
+        },
+        { selectable: false },
+      );
+
+      name2.top = 355;
+      name2.left = 170;
+
+      fabricCanvas.add(name2);
+
+      const name3 = drawTextBox(
+        `${thirdName}`,
+        {
+          color: CONSTANTS.orange,
+          fontSize: 12,
+          italic: false,
+          bold: true,
+          width: 170,
+          underline: false,
+          fontFamily: "Open Sans",
+        },
+        { selectable: false },
+      );
+
+      name3.top = 355;
+      name3.left = 342;
+
+      fabricCanvas.add(name3);
+
+      const title1 = drawTextBox(
+        `${firstTitle}`,
+        {
+          color: "white",
+          fontSize: 12,
+          italic: false,
+          bold: true,
+          width: 170,
+          underline: false,
+          fontFamily: "Open Sans",
+        },
+        { selectable: false },
+      );
+
+      title1.top = 370 + 10;
+      title1.left = 0;
+
+      fabricCanvas.add(title1);
+
+      const title2 = drawTextBox(
+        `${secondTitle}`,
+        {
+          color: "white",
+          fontSize: 12,
+          italic: false,
+          bold: true,
+          width: 170,
+          underline: false,
+          fontFamily: "Open Sans",
+        },
+        { selectable: false },
+      );
+
+      title2.top = 370 + 10;
+      title2.left = 170;
+
+      fabricCanvas.add(title2);
+
+      const title3 = drawTextBox(
+        `${thirdTitle}`,
+        {
+          color: "white",
+          fontSize: 12,
+          italic: false,
+          bold: true,
+          width: 170,
+          underline: false,
+          fontFamily: "Open Sans",
+        },
+        { selectable: false },
+      );
+
+      title3.top = 370 + 10;
+      title3.left = 342;
+
+      fabricCanvas.add(title3);
+
+      const t1 = drawText(
+        `${format(firstTimeFrom!, "p")} to ${format(firstTimeTo!, "p")}`,
+        {
+          color: "white",
+          fontSize: 12,
+          italic: false,
+          bold: true,
+          underline: false,
+          fontFamily: "Open Sans",
+        },
+        { selectable: false },
+      );
+
+      t1.top = 215;
+      t1.left = 15;
+
+      fabricCanvas.add(t1);
+
+      const t2 = drawText(
+        `${format(secondTimeFrom!, "p")} to ${format(secondTimeTo!, "p")}`,
+        {
+          color: "white",
+          fontSize: 12,
+          italic: false,
+          bold: true,
+          underline: false,
+          fontFamily: "Open Sans",
+        },
+        { selectable: false },
+      );
+
+      t2.top = 215;
+      t2.left = 170 + 15;
+
+      fabricCanvas.add(t2);
+
+      const t3 = drawText(
+        `${format(thirdTimeFrom!, "p")} to ${format(thirdTimeTo!, "p")}`,
+        {
+          color: "white",
+          fontSize: 12,
+          italic: false,
+          bold: true,
+          underline: false,
+          fontFamily: "Open Sans",
+        },
+        { selectable: false },
+      );
+
+      t3.top = 215;
+      t3.left = 342 + 15;
+
+      fabricCanvas.add(t3);
+
+      const l1 = new Line([170, 240, 170, 400], {
+        stroke: "white",
+        strokeWidth: 1,
+        selectable: false,
+      });
+
+      fabricCanvas.add(l1);
+
+      const l2 = new Line([342, 240, 342, 400], {
+        stroke: "white",
+        strokeWidth: 1,
+        selectable: false,
+      });
+
+      fabricCanvas.add(l2);
+
+      // l1 t1 l2 t2
+      const line = new Line(
+        [
+          ev_rect.get("width"),
+          ev_rect.get("top") + ev_rect.get("height") / 2,
+          ev_rect.get("width") + 75,
+          ev_rect.get("top") + ev_rect.get("height") / 2,
+        ],
+        {
+          stroke: "white",
+          strokeWidth: 1,
+          selectable: false,
+        },
+      );
+
+      fabricCanvas.add(line);
+
+      const eventCoordNameText = drawText(
+        `${eventCoordinator}`,
+        {
+          color: "white",
+          fontSize: 14,
+          italic: false,
+          bold: true,
+          underline: false,
+          fontFamily: "Open Sans",
+        },
+        { selectable: false },
+      );
+
+      eventCoordNameText.top = 455 + 10;
+      eventCoordNameText.left = 25;
+
+      fabricCanvas.add(eventCoordNameText);
+
+      const eventCoordTitleText = drawText(
+        `${eventCoordinatorTitle}`,
+        {
+          color: "white",
+          fontSize: 14,
+          italic: false,
+          bold: false,
+          underline: false,
+          fontFamily: "Open Sans",
+        },
+        { selectable: false },
+      );
+
+      eventCoordTitleText.top = 465 + 10 + 14;
+      eventCoordTitleText.left = 25;
+
+      fabricCanvas.add(eventCoordTitleText);
+
       //const nameText = drawText(
       //  topic,
       //  {
@@ -236,7 +711,7 @@ export function TemplateSeminar({ fabricCanvasRef }: ITemplateSeminarProps) {
   }
 
   useEffect(() => {
-    clearFabricCanvas()
+    clearFabricCanvas();
     return clearFabricCanvas();
   }, []);
 

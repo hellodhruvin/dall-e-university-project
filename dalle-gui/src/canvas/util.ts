@@ -95,6 +95,33 @@ export const drawSquare = async (
   return square;
 };
 
+interface IRectangleOptions {
+  x: number;
+  y: number;
+  height: number;
+  width: number;
+  fill: string;
+  opacity: number;
+}
+
+export const drawRectangle = async (
+  { x, y, height, width, fill, opacity }: IRectangleOptions,
+  { selectable }: ISelectable,
+) => {
+  const square = new fabric.Rect({
+    left: x,
+    top: y,
+    height: height,
+    width: width,
+    fill: fill,
+    opacity: opacity,
+    ...caching_disabled,
+    ...getMovableProps(selectable),
+  });
+
+  return square;
+};
+
 interface IDimensions {
   height: number;
   width: number;
@@ -189,6 +216,38 @@ export const drawText = (
   return text;
 };
 
+interface ITextBoxOptions {
+  color: string;
+  italic?: boolean;
+  underline?: boolean;
+  bold?: boolean;
+  fontSize: number;
+  fontFamily: string;
+  width: number;
+}
+
+export const drawTextBox = (
+  content: string,
+  { color, italic, width, underline, bold, fontSize, fontFamily }: ITextBoxOptions,
+  { selectable }: ISelectable,
+): fabric.Textbox => {
+  const text = new fabric.Textbox(content, {
+    fontFamily: fontFamily,
+    fontSize: fontSize,
+    fill: color,
+    width: width,
+    textAlign: "center",
+    fontStyle: italic ? "italic" : "normal",
+    fontWeight: bold ? "bold" : "normal",
+    underline: underline,
+    ...caching_disabled,
+    ...getMovableProps(selectable),
+  });
+
+
+  return text;
+};
+
 export const drawSvg = async (url: string, { selectable }: ISelectable) => {
   const { objects } = await fabric.loadSVGFromURL(url);
 
@@ -239,3 +298,67 @@ export function debug_fabric_obj(object: fabric.FabricObject) {
     });
   });
 }
+
+export const drawCroppedImageFromURL = async (
+  url: string,
+  { height, width }: Partial<IDimensions>,
+  { selectable }: ISelectable,
+): Promise<fabric.FabricImage> => {
+  const img = await fabric.FabricImage.fromURL(
+    url,
+    {},
+    {
+      ...caching_disabled,
+      ...getMovableProps(selectable),
+    },
+  );
+
+  if (height && width) {
+    const aspectRatio = img.get("width") / img.get("height");
+    let cropWidth = img.get("width");
+    let cropHeight = img.get("height");
+
+    if (aspectRatio > 1) {
+      // Landscape-oriented image, crop height
+      cropHeight = Math.min(img.get("height"), height);
+      cropWidth = cropHeight * aspectRatio;
+    } else {
+      // Portrait-oriented image, crop width
+      cropWidth = Math.min(img.get("width"), width);
+      cropHeight = cropWidth / aspectRatio;
+    }
+
+    const left = (img.get("width") - cropWidth) / 2;
+    const top = (img.get("height") - cropHeight) / 2;
+
+    img.set({
+      left: -left,
+      top: -top,
+      scaleX: width / cropWidth,
+      scaleY: height / cropHeight,
+      width,
+      height,
+    });
+
+  } else if (height) {
+    img.scaleToHeight(height);
+  } else if (width) {
+    img.scaleToWidth(width);
+  } else {
+    // No size specified, do nothing
+  }
+
+  return img;
+};
+
+export const drawSquareCroppedImageFromURL = async (
+  url: string,
+  size: number,
+  selectable_options: ISelectable,
+): Promise<fabric.FabricImage> => {
+  return drawCroppedImageFromURL(
+    url,
+    { height: size, width: size },
+    selectable_options,
+  );
+};

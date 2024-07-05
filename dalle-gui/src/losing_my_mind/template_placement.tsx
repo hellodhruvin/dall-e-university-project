@@ -284,7 +284,6 @@ export function TemplatePlacment({ fabricCanvasRef }: ITemplatePlacementProps) {
 
       calendarIcon.top = 214;
       calendarIcon.left = 16;
-      calendarIcon.selectable = false;
 
       fabricCanvas.add(calendarIcon);
 
