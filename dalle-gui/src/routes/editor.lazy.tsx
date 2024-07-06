@@ -79,25 +79,25 @@ function Editor() {
                     Student Placement Post
                   </SelectItem>
 
-                  <SelectItem value="sample-replace-1" disabled={true}>
-                    Under Progress Template 1
-                  </SelectItem>
-                  <SelectItem value="sample-replace-2" disabled={true}>
-                    Under Progress Template 2
-                  </SelectItem>
-
                   <SelectItem value="seminar">
                     Seminar Announcement Post
                   </SelectItem>
 
+                  <SelectItem value="sample-replace-1" disabled={true}>
+                    Student Internship Post
+                  </SelectItem>
+                  <SelectItem value="sample-replace-2" disabled={true}>
+                    Student Sports Achievement Post
+                  </SelectItem>
+
                   <SelectItem value="sample-replace-3" disabled={true}>
-                    Under Progress Template 3
+                    Student Sports Event Post
                   </SelectItem>
                   <SelectItem value="sample-replace-4" disabled={true}>
-                    Under Progress Template 4
+                    Flagship Event Posts
                   </SelectItem>
                   <SelectItem value="sample-replace-5" disabled={true}>
-                    Under Progress Template 5
+                    Foundation Course Posts
                   </SelectItem>
 
                 </SelectGroup>

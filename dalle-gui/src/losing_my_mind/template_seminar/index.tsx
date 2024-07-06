@@ -16,12 +16,9 @@ import { cn } from "@/lib/utils";
 import { CalendarIcon } from "@radix-ui/react-icons";
 import { Calendar } from "@/components/ui/calendar";
 import {
-  debug_fabric_obj,
-  drawCircle,
   drawRectangle,
   drawScaledImageFromURL,
   drawSquare,
-  drawSquareCroppedImageFromURL,
   drawSquareScaledImageFromURL,
   drawSvg,
   drawText,
@@ -366,15 +363,15 @@ export function TemplateSeminar({ fabricCanvasRef }: ITemplateSeminarProps) {
       fabricCanvas.add(topic3);
 
       const photo1 = await drawSquareScaledImageFromURL(firstPictureUrl, 100, {
-        selectable: true,
+        selectable: false,
       });
 
       const photo2 = await drawSquareScaledImageFromURL(secondPictureUrl, 100, {
-        selectable: true,
+        selectable: false,
       });
 
       const photo3 = await drawSquareScaledImageFromURL(thirdPictureUrl, 100, {
-        selectable: true,
+        selectable: false,
       });
 
       photo3.top = 240;
@@ -455,7 +452,7 @@ export function TemplateSeminar({ fabricCanvasRef }: ITemplateSeminarProps) {
           color: "white",
           fontSize: 12,
           italic: false,
-          bold: true,
+          bold: false,
           width: 170,
           underline: false,
           fontFamily: "Open Sans",
@@ -474,7 +471,7 @@ export function TemplateSeminar({ fabricCanvasRef }: ITemplateSeminarProps) {
           color: "white",
           fontSize: 12,
           italic: false,
-          bold: true,
+          bold: false,
           width: 170,
           underline: false,
           fontFamily: "Open Sans",
@@ -493,7 +490,7 @@ export function TemplateSeminar({ fabricCanvasRef }: ITemplateSeminarProps) {
           color: "white",
           fontSize: 12,
           italic: false,
-          bold: true,
+          bold: false,
           width: 170,
           underline: false,
           fontFamily: "Open Sans",
@@ -914,7 +911,7 @@ export function TemplateSeminar({ fabricCanvasRef }: ITemplateSeminarProps) {
                           )}
                         </Button>
                       </SheetTrigger>
-                      <SheetContent className="w-auto p-0" align="center">
+                      <SheetContent className="w-auto p-0">
                         <Calendar
                           mode="single"
                           selected={date}
